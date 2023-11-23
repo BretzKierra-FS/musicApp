@@ -1,0 +1,32 @@
+GET http://localhost:4000/newPost
+
+###
+
+GET http://localhost:4000/newPost/65454a2b8292e918897f676e
+
+###
+
+POST http://localhost:4000/newPost
+Content-Type: application/json
+
+{
+    "title": "New BLog Test",
+    "description": "Blog description goes here",
+    "content": "Blog content here",
+    "image": "image.LinkHere"
+}
+
+
+###
+
+PATCH http://localhost:4000/newPost/65454a2b8292e918897f676e
+Content-Type: application/json
+
+{
+    "title": "Changed title"
+
+}
+
+###
+
+DELETE http://localhost:4000/newPost/65454a0b775f391146005c57
