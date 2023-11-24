@@ -1,0 +1,17 @@
+{
+  "name": "musicapp",
+  "version": "1.0.0",
+  "engines": {
+    "node": "18.16.1"
+  },
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:all": "concurrently --raw \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run start",
+    "client": "cd client && npm run dev"
+  },
+  "author": "",
+  "license": "ISC"
+}

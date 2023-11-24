@@ -1,10 +1,10 @@
 const express = require('express');
 require('dotenv').config();
-const connectDB = require('./app/db/config');
+const connectDB = require('./db/config');
 const cors = require('cors');
 // const path = require('path');
 const app = express();
-const routeHandler = require('./app/routes/index');
+const routeHandler = require('./routes/index');
 
 app.use(express.urlencoded({ extended: true }));
 

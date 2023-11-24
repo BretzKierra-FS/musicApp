@@ -1,5 +1,5 @@
 const axios = require('axios');
-const querystring = require('Querystring');
+const querystring = require('querystring');
 
 const { Client_ID, CLIENT_SECRET, REDIRECT_URI } = process.env;
 
