@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+h3 {
+  color: #f05941;
+  font-family: 'Vina Sans', sans-serif;
+  font-size: 2rem;
+}

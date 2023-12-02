@@ -48,7 +48,8 @@ const AuthForm = () => {
           />
         </div>
         <button
-          className="bg-musicRed w-1/2 m-auto mt-2 rounded-lg"
+          className="bg-musicRed w-1/2 m-auto mt-2 rounded-lg p-1
+          "
           type="submit"
         >
           Sign In
