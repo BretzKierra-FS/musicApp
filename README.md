@@ -10,11 +10,12 @@ Welcome to MusicApp, a platform that allows you to integrate with Spotify. With 
 
 This app is a work in progress. There will be milestones completed for each week.
 
-[Completed] **Milestone 1**: Initial setup and basic app funcions. App can start and run server, front-end browser functions and starts. Design a Prototype figma for design.
+
+**Milestone 1**[Done]: Initial setup and basic app funcions. App can start and run server, front-end browser functions and starts. Design a Prototype figma for design.
 
 ### Figma Link:[HERE](https://www.figma.com/file/zxXGXVgcpLhJyR6qxG7eIN/Untitled?type=design&node-id=0%3A1&mode=design&t=6p0XO8lGla43UAlS-1)
 
-**Milestone 2**: Frontend design is created and looks like the prototype. Start on the backend APIs.
+**Milestone 2**[Done]: Frontend design is created and looks like the prototype. Start on the backend APIs.
 
 **Milestone 3**: Backend functionality completed, app is able to function.
 
