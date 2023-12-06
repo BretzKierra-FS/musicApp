@@ -1,93 +1,95 @@
 const axios = require('axios');
 const querystring = require('querystring');
-const generateRandomString = require('../utils/utils');
 const { access } = require('fs');
-
 const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env;
+const utils = require('../utils/utils');
 
-//  Login Fuction
+const stateKey = 'spotify_auth_state';
+const spotifyTokenUrl = 'https://accounts.spotify.com/api/token';
+const spotifyApiUrl = 'https://api.spotify.com/v1/search';
+
+// Login Function
 exports.login = (req, res) => {
   console.log(`Auth Start`);
-  const stateKey = 'spotify_auth_state';
-  const state = generateRandomString(10);
+  const state = utils.generateRandomString(10);
   res.cookie(stateKey, state);
-
-  const scope = 'user-read-private user-read-email';
-
-  res.redirect(
-    `https://accounts.spotify.com/authorize?` +
-      querystring.stringify({
-        client_id: CLIENT_ID,
-        response_type: 'code',
-        redirect_uri: REDIRECT_URI,
-        scope: scope,
-        state: state,
-      })
-  );
+  const authUrl = utils.generateSpotifyAuthUrl(CLIENT_ID, REDIRECT_URI, state);
+  res.redirect(authUrl);
 };
 
-// Callback Function
+// Callback
 exports.callback = async (req, res) => {
   const { code } = req.query;
   console.log('Received code:', code);
-
+  //requesting tokens
   try {
     const response = await axios({
       method: 'POST',
-      url: 'https://accounts.spotify.com/api/token',
+      url: spotifyTokenUrl,
+      data,
       params: {
         grant_type: 'authorization_code',
         code,
         redirect_uri: REDIRECT_URI,
       },
-      headers: {
-        Authorization: `Basic ${Buffer.from(
-          `${CLIENT_ID}:${CLIENT_SECRET}`
-        ).toString('base64')}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: utils.generateAuthorizationHeader(CLIENT_ID, CLIENT_SECRET),
     });
 
     console.log('Spotify API response:', response.data);
-    const { access_token, refresh_token, expires_in } = response.data;
+    const { access_token, refresh_token, expires_in } = response.data; // new model
     return res
       .status(200)
       .json({ message: 'Callback handler', data: response.data });
   } catch (error) {
-    console.error('Error in Spotify API request:', error.message);
-    if (error.response) {
-      console.error('Spotify API error details:', error.response.data);
-      return res
-        .status(error.response.status)
-        .json({ error: 'Spotify API Error', details: error.response.data });
-    } else {
-      return res.status(500).json({ error: 'Internal Server Error' });
-    }
+    return utils.handleError(res, error);
   }
 };
-// Logout Function
+
+// Logout
 exports.logout = async (req, res) => {
-  return res.status(200).json({ message: 'Loged Out' });
+  return res.status(200).json({ message: 'Logged Out' });
 };
-// Refresh Function
+
+// Refresh
 exports.refresh = async (req, res) => {
   const { refresh_token } = req.query;
   console.log('>>>>', refresh_token);
-  const response = await axios({
-    method: 'POST',
-    url: 'https://accounts.spotify.com/api/token',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Buffer.from(
-        `${CLIENT_ID}:${CLIENT_SECRET}`
-      ).toString('base64')}`,
-    },
-    params: {
-      grant_type: 'refresh_token',
-      refresh_token: refresh_token,
-    },
-  });
-  return res
-    .status(200)
-    .json({ message: 'Refresh Token', data: response.data });
+  try {
+    const response = await axios({
+      method: 'POST',
+      url: spotifyTokenUrl,
+      headers: generateAuthorizationHeader(),
+      params: {
+        grant_type: 'refresh_token',
+        refresh_token,
+      },
+    });
+    return res
+      .status(200)
+      .json({ message: 'Refresh Token', data: response.data });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+// Search
+exports.search = async (req, res) => {
+  try {
+    const response = await axios({
+      method: 'GET',
+      url: spotifyApiUrl,
+      params: {
+        type: 'album,artist,track',
+        q: req.query.q,
+        limit: 5,
+      },
+      headers: {
+        Authorization: 'Bearer ' + req.access_token,
+        'Content-Type': 'application/json',
+      },
+    });
+    res.json(response.data);
+  } catch (error) {
+    res.json(error);
+  }
 };
