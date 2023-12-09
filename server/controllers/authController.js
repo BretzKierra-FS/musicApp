@@ -19,9 +19,19 @@ exports.login = (req, res) => {
 };
 
 //callback
+// callback
 exports.callback = async (req, res) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
   console.log('Received code:', code);
+
+  // Check if the state matches what was sent during the authentication request
+  const storedState = req.cookies[stateKey];
+  if (state === null || state !== storedState) {
+    return res.status(500).json({ error: 'State mismatch' });
+  }
+
+  // Clear the stored state
+  res.clearCookie(stateKey);
 
   try {
     const response = await axios({
@@ -49,15 +59,18 @@ exports.callback = async (req, res) => {
     // Save the token to the database
     const savedToken = await tokenInstance.save();
 
-    return res.status(200).json({
+    // Send JSON response
+    res.status(200).json({
       message: 'Callback handler',
       data: { token: savedToken, spotifyData: response.data },
     });
+
+    // Redirect to localhost:3000
+    return res.redirect('http://localhost:3000');
   } catch (error) {
     return utils.handleError(res, error);
   }
 };
-
 // Logout
 exports.logout = async (req, res) => {
   try {
