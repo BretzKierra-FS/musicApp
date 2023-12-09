@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
+import { login } from '../services/spotify';
 
-const AuthForm = () => {
-  const handleSubmit = (e) => {
+const AuthForm = ({ onLogin }) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    try {
+      const response = await login();
+      const token = response.data.token;
+      onLogin(token);
+    } catch (error) {
+      console.error(error);
+    }
   };
-
   return (
     <div
       className="w-1/2 m-auto mt-28 rounded-lg border-8 p-10 shadow-2xl bg-opacity-30 text-white"
