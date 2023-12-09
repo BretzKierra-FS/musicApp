@@ -2,6 +2,7 @@ const axios = require('axios');
 const querystring = require('querystring');
 const { access } = require('fs');
 const { CLIENT_ID, CLIENT_SECRET, REDIRECT_URI } = process.env;
+const Token = require('../models/Tokens');
 const utils = require('../utils/utils');
 
 const stateKey = 'spotify_auth_state';
@@ -17,34 +18,44 @@ exports.login = (req, res) => {
   res.redirect(authUrl);
 };
 
-// Callback
 exports.callback = async (req, res) => {
   const { code } = req.query;
   console.log('Received code:', code);
-  //requesting tokens
+
   try {
     const response = await axios({
       method: 'POST',
       url: spotifyTokenUrl,
-      data,
-      params: {
+      data: querystring.stringify({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: REDIRECT_URI,
-      },
+        redirect_uri: REDIRECT_URI, //remember to change this
+      }),
       headers: utils.generateAuthorizationHeader(CLIENT_ID, CLIENT_SECRET),
     });
 
     console.log('Spotify API response:', response.data);
-    const { access_token, refresh_token, expires_in } = response.data; // new model
-    return res
-      .status(200)
-      .json({ message: 'Callback handler', data: response.data });
+
+    const { access_token, refresh_token, expires_in } = response.data;
+
+    // Create a new Token instance
+    const tokenInstance = new Token({
+      access_token,
+      refresh_token,
+      expires_in,
+    });
+
+    // Save the token to the database
+    const savedToken = await tokenInstance.save();
+
+    return res.status(200).json({
+      message: 'Callback handler',
+      data: { token: savedToken, spotifyData: response.data },
+    });
   } catch (error) {
     return utils.handleError(res, error);
   }
 };
-
 // Logout
 exports.logout = async (req, res) => {
   return res.status(200).json({ message: 'Logged Out' });
