@@ -1,24 +1,21 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from './components/Header';
 import AuthForm from './components/AuthForm';
 import MusicListing from './components/MusicListing.js';
 import Footer from './components/Footer.js';
 
 function App() {
-  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
 
-  useEffect(() => {
-    const user = true;
-    if (user) {
-      setUser(user);
-    }
-  });
+  const handleLogin = (newToken) => {
+    setToken(newToken);
+  };
 
   return (
     <div className="">
       <Header />
-      {!user && <AuthForm />}
-      {user && <MusicListing />}
+      {!token && <AuthForm onLogin={handleLogin} />}
+      {token && <MusicListing />}
       <Footer />
     </div>
   );

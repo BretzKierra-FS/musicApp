@@ -18,6 +18,7 @@ exports.login = (req, res) => {
   res.redirect(authUrl);
 };
 
+//callback
 exports.callback = async (req, res) => {
   const { code } = req.query;
   console.log('Received code:', code);
@@ -29,7 +30,7 @@ exports.callback = async (req, res) => {
       data: querystring.stringify({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: REDIRECT_URI, //remember to change this
+        redirect_uri: REDIRECT_URI,
       }),
       headers: utils.generateAuthorizationHeader(CLIENT_ID, CLIENT_SECRET),
     });
@@ -38,7 +39,7 @@ exports.callback = async (req, res) => {
 
     const { access_token, refresh_token, expires_in } = response.data;
 
-    // Create a new Token instance
+    // Create a new Token
     const tokenInstance = new Token({
       access_token,
       refresh_token,
@@ -56,9 +57,25 @@ exports.callback = async (req, res) => {
     return utils.handleError(res, error);
   }
 };
+
 // Logout
 exports.logout = async (req, res) => {
-  return res.status(200).json({ message: 'Logged Out' });
+  try {
+    const { authorization } = req.headers;
+
+    // Extract the token from Auth header
+    const accessToken = authorization.split(' ')[1];
+
+    // delete the current token and all tokens that have expired
+    await Token.deleteMany({
+      $or: [{ access_token: accessToken }, { expires_in: { $lt: Date.now() } }],
+    });
+
+    return res.status(200).json({ message: 'Logged Out' });
+  } catch (error) {
+    console.error('Error during logout:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
 };
 
 // Refresh
@@ -83,9 +100,56 @@ exports.refresh = async (req, res) => {
   }
 };
 
+// Function to refresh the access token
+const refreshAccessToken = async (refreshToken) => {
+  try {
+    const response = await axios({
+      method: 'POST',
+      url: spotifyTokenUrl,
+      params: {
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+      },
+      headers: utils.generateAuthorizationHeader(CLIENT_ID, CLIENT_SECRET),
+    });
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Search
 exports.search = async (req, res) => {
   try {
+    const token = await Token.findOne();
+
+    // check if token is expired
+    if (token.expires_in < Date.now()) {
+      // Token is expired, refresh it
+      try {
+        const refreshResponse = await refreshAccessToken(token.refresh_token);
+        // Update the database with the new token
+        await Token.findOneAndUpdate(
+          { refresh_token: token.refresh_token },
+          {
+            access_token: refreshResponse.access_token,
+            expires_in: Date.now() + refreshResponse.expires_in * 1000,
+          },
+          { new: true }
+        );
+
+        //refresh access token for the API request
+        req.access_token = refreshResponse.access_token;
+      } catch (error) {
+        console.error('Error refreshing token:', error);
+        return res.status(401).json({ message: 'Token refresh failed' });
+      }
+    } else {
+      req.access_token = token.access_token;
+    }
+
+    // Make API request
     const response = await axios({
       method: 'GET',
       url: spotifyApiUrl,
@@ -99,6 +163,7 @@ exports.search = async (req, res) => {
         'Content-Type': 'application/json',
       },
     });
+
     res.json(response.data);
   } catch (error) {
     res.json(error);
