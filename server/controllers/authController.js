@@ -20,8 +20,17 @@ exports.login = (req, res) => {
 
 //callback
 exports.callback = async (req, res) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
   console.log('Received code:', code);
+
+  // Check if the state matches what was sent during the authentication request
+  const storedState = req.cookies[stateKey];
+  if (state === null || state !== storedState) {
+    return res.status(500).json({ error: 'State mismatch' });
+  }
+
+  // Clear the stored state
+  res.clearCookie(stateKey);
 
   try {
     const response = await axios({
@@ -49,10 +58,8 @@ exports.callback = async (req, res) => {
     // Save the token to the database
     const savedToken = await tokenInstance.save();
 
-    return res.status(200).json({
-      message: 'Callback handler',
-      data: { token: savedToken, spotifyData: response.data },
-    });
+    // Redirect to localhost:3000 with the access token as a query parameter
+    return res.redirect(`http://localhost:3000/?access_token=${access_token}`);
   } catch (error) {
     return utils.handleError(res, error);
   }
