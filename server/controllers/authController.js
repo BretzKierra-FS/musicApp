@@ -58,8 +58,8 @@ exports.callback = async (req, res) => {
     // Save the token to the database
     const savedToken = await tokenInstance.save();
 
-    // Redirect to localhost:3000
-    return res.redirect('http://localhost:3000');
+    // Redirect to localhost:3000 with the access token as a query parameter
+    return res.redirect(`http://localhost:3000/?access_token=${access_token}`);
   } catch (error) {
     return utils.handleError(res, error);
   }
