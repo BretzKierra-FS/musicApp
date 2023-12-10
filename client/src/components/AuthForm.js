@@ -1,7 +1,7 @@
 import React from 'react';
 
 const AuthForm = () => {
-  const authUrl = 'http://localhost:4000/api/v1/auth'; // Replace with your actual URL
+  const authUrl = 'http://localhost:4000/api/v1/auth';
 
   return (
     <div

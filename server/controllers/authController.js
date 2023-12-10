@@ -52,7 +52,7 @@ exports.callback = async (req, res) => {
     const tokenInstance = new Token({
       access_token,
       refresh_token,
-      expires_in,
+      expires_in: Date.now() + expires_in * 1000,
     });
 
     // Save the token to the database
@@ -86,28 +86,6 @@ exports.logout = async (req, res) => {
 };
 
 // Refresh
-exports.refresh = async (req, res) => {
-  const { refresh_token } = req.query;
-  console.log('>>>>', refresh_token);
-  try {
-    const response = await axios({
-      method: 'POST',
-      url: spotifyTokenUrl,
-      headers: generateAuthorizationHeader(),
-      params: {
-        grant_type: 'refresh_token',
-        refresh_token,
-      },
-    });
-    return res
-      .status(200)
-      .json({ message: 'Refresh Token', data: response.data });
-  } catch (error) {
-    return handleError(res, error);
-  }
-};
-
-// Function to refresh the access token
 const refreshAccessToken = async (refreshToken) => {
   try {
     const response = await axios({
@@ -120,7 +98,17 @@ const refreshAccessToken = async (refreshToken) => {
       headers: utils.generateAuthorizationHeader(CLIENT_ID, CLIENT_SECRET),
     });
 
-    return response.data;
+    // Store the new expiration timestamp in the database
+    const updatedToken = await Token.findOneAndUpdate(
+      { refresh_token: refreshToken },
+      {
+        access_token: response.data.access_token,
+        expires_in: Date.now() + response.data.expires_in * 1000,
+      },
+      { new: true }
+    );
+
+    return updatedToken;
   } catch (error) {
     throw error;
   }
