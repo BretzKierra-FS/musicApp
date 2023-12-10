@@ -1,21 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import AuthForm from './components/AuthForm';
 import MusicListing from './components/MusicListing.js';
 import Footer from './components/Footer.js';
 
 function App() {
-  const [token, setToken] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+  const location = useLocation();
 
-  const handleLogin = (newToken) => {
-    setToken(newToken);
-  };
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const newAccessToken = urlParams.get('access_token');
+
+    if (newAccessToken) {
+      setAccessToken(newAccessToken);
+    }
+  }, [location.search]);
 
   return (
     <div className="">
       <Header />
-      {!token && <AuthForm onLogin={handleLogin} />}
-      {token && <MusicListing />}
+      {!accessToken && <AuthForm />}
+      {accessToken && <MusicListing accessToken={accessToken} />}
       <Footer />
     </div>
   );
